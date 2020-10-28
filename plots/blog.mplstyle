@@ -1,0 +1,25 @@
+font.family: sans
+font.serif: IMB Plex Sans
+font.size: 14
+
+axes.spines.top: False
+axes.spines.right: False
+
+text.color: white
+
+figure.constrained_layout.use: True
+figure.figsize: 5.0, 4.0
+figure.facecolor: 272822
+
+axes.prop_cycle: cycler('color', ['E24A33', '348ABD', '988ED5', '777777', 'FBC15E', '8EBA42', 'FFB5B8']) # from ggplot
+
+axes.grid: True
+axes.labelcolor: white
+axes.edgecolor: white
+axes.facecolor: 272822
+
+xtick.color: white
+ytick.color: white
+
+savefig.bbox: tight
+savefig.pad_inches: 0.0
