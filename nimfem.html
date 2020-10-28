@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+      <title>Things I don't know - Nimfem</title>
+    <meta charset="utf-8" />
+
+
+
+
+
+
+    <link rel="stylesheet" type="text/css" href="/theme/css/style.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQFJfxn0IYznZYonOWZ644AWYC+Pt2cHqMaRhXVrursRwvLnLaebdGIlYNa" crossorigin="anonymous"
+    onload="renderMathInElement(document.body);"></script>
+</head>
+
+<body id="index" class="home">
+    <header id="banner" class="body">
+            <h1><a href="/">Things I don't know <strong></strong></a></h1>
+    </header><!-- /#banner -->
+    <nav id="menu"><ul>
+    </ul></nav><!-- /#menu -->
+<section id="content" class="body">
+  <header>
+    <h2 class="entry-title">
+      <a href="/nimfem.html" rel="bookmark"
+         title="Permalink to Nimfem">Nimfem</a></h2>
+ 
+  </header>
+  <footer class="post-info">
+    <time class="published" datetime="2020-10-25T00:00:00+02:00">
+      Sun 25 October 2020
+    </time>
+    <address class="vcard author">
+      By           <a class="url fn" href="/author/psirus.html">Psirus</a>
+    </address>
+    <div class="category">
+        Category: <a href="/category/numerics.html">Numerics</a>
+    </div>
+  </footer><!-- /.post-info -->
+  <div class="entry-content">
+    <p>I've written a finite element library. Let's talk about it.</p>
+<h2>Motivation</h2>
+<p>The initial inspiration came from watching the talk <a href="https://www.youtube.com/watch?v=pW-SOdj4Kkk">“Preventing the Collapse of Civilization”</a> by Jonathan Blow, which I highly recommend.
+Essentially, its about the loss of understanding in software development when piling abstractions on top of each other.
+And while an FEM library might not be an Electron app, at least I didn't understand in detail how sparse matrices are stored and sparse linear systems are solved.
+So I wrote all of this from scratch to rectify that.</p>
+<h2>Solving the Poisson equation</h2>
+<p>To have something to compare to, I implemented a solver for the Poisson equation as in the <a href="https://fenicsproject.org/pub/tutorial/html/._ftut1004.html">first example of the FEniCS tutorial</a>. That is, solve
+$$-Δu = f$$
+subject to
+$$u = u_D \text{ on } Γ_D$$
+with
+$$\begin{aligned} u_D &amp;= 1 + x^2 + 2y^2 \\
+f &amp;= - 6 \end{aligned}$$
+on a unit square.
+And I can report that it works:</p>
+<p><img alt="Solution of Poisson equation" src="images/poisson_solution.png"></p>
+<p>So I'm very happy with that. Here is what the main file to achieve that looks like:</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="n">nimfem</span>
+
+<span class="k">proc </span><span class="nf">myF</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Vector</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span><span class="p">,</span> <span class="n">J</span><span class="p">:</span> <span class="n">Matrix</span><span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">):</span> <span class="n">Matrix</span><span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="o">]</span> <span class="o">=</span>
+  <span class="k">let</span> <span class="n">B</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">J</span><span class="p">)</span> <span class="o">*</span> <span class="n">derivativeShapeFunctions</span><span class="p">()</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="n">B</span><span class="p">.</span><span class="n">transpose</span> <span class="o">*</span> <span class="n">B</span>
+
+<span class="k">proc </span><span class="nf">mySource</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Vector</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span><span class="p">,</span> <span class="n">J</span><span class="p">:</span> <span class="n">Matrix</span><span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">):</span> <span class="n">Vector</span><span class="o">[</span><span class="mi">3</span><span class="o">]</span> <span class="o">=</span>
+  <span class="k">let</span> <span class="n">N</span> <span class="o">=</span> <span class="n">shapeFunctions</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">6.0</span> <span class="o">*</span> <span class="n">N</span>
+
+<span class="k">proc </span><span class="nf">bc</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Vector</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span><span class="p">):</span> <span class="kt">float</span> <span class="o">=</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">x</span><span class="o">[</span><span class="mi">0</span><span class="o">]*</span><span class="n">x</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">x</span><span class="o">[</span><span class="mi">1</span><span class="o">]*</span><span class="n">x</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+
+<span class="k">let</span> <span class="n">my_mesh</span> <span class="o">=</span> <span class="n">UnitSquareMesh</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+
+<span class="kd">var</span> <span class="n">A</span> <span class="o">=</span> <span class="n">assembleMatrix</span><span class="p">(</span><span class="n">myF</span><span class="p">,</span> <span class="n">my_mesh</span><span class="p">)</span>
+<span class="kd">var</span> <span class="n">f</span> <span class="o">=</span> <span class="n">assembleVector</span><span class="p">(</span><span class="n">mySource</span><span class="p">,</span> <span class="n">my_mesh</span><span class="p">)</span>
+
+<span class="n">setDiagonalRows</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">my_mesh</span><span class="p">.</span><span class="n">boundary_nodes</span><span class="p">)</span>
+<span class="n">applyBC</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">my_mesh</span><span class="p">,</span> <span class="n">bc</span><span class="p">)</span>
+
+<span class="kd">var</span> <span class="n">P</span> <span class="o">=</span> <span class="n">incomplete_lu</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="kd">var</span> <span class="n">u</span> <span class="o">=</span> <span class="n">preconditioned_cg</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+<span class="n">writeVTK</span><span class="p">(</span><span class="n">my_mesh</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span>
+
+<span class="n">echo</span> <span class="s">&quot;Number of elements: &quot;</span><span class="p">,</span> <span class="n">my_mesh</span><span class="p">.</span><span class="n">connectivity</span><span class="p">.</span><span class="n">len</span>
+</pre></div>
+
+
+<p>That ain't so bad, if I might say so.</p>
+<h2>Size &amp; Scope</h2>
+<p>If you're unfamiliar with <a href="https://nim-lang.org">Nim</a>, you can see that the syntax is quite succint and Pythonesque. The whole library (right now) does</p>
+<ul>
+<li>Dense linear algebra</li>
+<li>Sparse matrices</li>
+<li>mesh generation (unit square discretized w/ triangles)</li>
+<li>first order lagrange triangle elements</li>
+<li>gauss quadrature for those</li>
+<li>vector and matrix assembly</li>
+<li>BC application</li>
+<li>linear solver: conjugate gradient, preconditioned CG, incomplete LU</li>
+<li>VTK output</li>
+</ul>
+<p>while coming in at less than 500 lines of code. The compactness is one of the reasons I like Nim. The other is that there is nothing Pythonesque about the speed.</p>
+<h2>Speed</h2>
+<p>Here is a quick comparison of runtimes for various mesh sizes between this Nimfem solver and the equivalent (I think) FEniCS version.</p>
+<p><img alt="Runtime comparison" src="images/comparison.png"></p>
+<p>Note that for small meshes, the FEniCS runtime is dominated by the Python startup time.
+For Nimfem, the runtime for the meshes with 100 and 1000 elements is below the resolution of <code>/usr/bin/time</code> (one hundredth of a second).
+The smallest speedup is at 1 million elements with 43%, and for 10 million elements, Nimfem is more than twice as fast as FEniCS.
+On the one hand, Nimfem doesn't have a fraction of the features, and all the sizes for element matrices for example can be hardcoded, so that might make it quite quick.
+On the other hand, there is basically no optimization in the code, and I didn't think I would be able to beat PETSc at solving the linear system, which is naturally what dominates the runtime.</p>
+<h2>Epilogue</h2>
+<p>Initially I had intended to make this a small tutorial series on writing an FEM library from scratch, but a) it has been quite a while since the majority of the code was written and b) I have unfortunately lost all my notes I had taken while implementing it.
+Both make unenthusiastic about doing that now.</p>
+<p>If you want to have a look, all the code lives at <a href="https://github.com/Psirus/Nimfem">https://github.com/Psirus/Nimfem</a>.</p>
+  </div><!-- /.entry-content -->
+</section>
+</body>
+</html>
