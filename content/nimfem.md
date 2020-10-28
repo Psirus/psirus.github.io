@@ -95,5 +95,7 @@ Epilogue
 
 Initially I had intended to make this a small tutorial series on writing an FEM library from scratch, but a) it has been quite a while since the majority of the code was written and b) I have unfortunately lost all my notes I had taken while implementing it.
 Both make unenthusiastic about doing that now.
+But if you do have any questions, feel free to ask.
+Or try to make me change my mind on the tutorials.
 
 If you want to have a look, all the code lives at [https://github.com/Psirus/Nimfem](https://github.com/Psirus/Nimfem).
