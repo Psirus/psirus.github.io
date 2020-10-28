@@ -45,3 +45,11 @@ pre {
     margin-bottom : 1em ;
     margin-top : 1em ;
 }
+
+.body {
+    margin-bottom: 1.5cm;
+}
+
+.utterances {
+    margin-top: 1cm;
+}
